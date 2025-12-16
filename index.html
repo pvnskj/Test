@@ -394,6 +394,17 @@
       flex: 1;
     }
 
+    #impact-content-container {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    #impact-content-container body {
+      margin: 0;
+      padding: 0;
+    }
+
     .action-area {
       margin-top: auto;
     }
@@ -529,7 +540,9 @@
 
         <div class="tab-pane active" id="pane-impact">
           <div class="pane-desc" id="desc-impact"></div>
-          <div class="action-area">
+          <div id="impact-content-container"
+            style="display: none; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;"></div>
+          <div class="action-area" id="impact-action-area">
             <button class="primary-btn" id="btn-impact" onclick="openDocCurrent('impact')">View Impact
               Deck</button>
           </div>
@@ -680,8 +693,21 @@
         <div class="stat-row"><span class="s-val">${s.val}</span><span class="s-lbl">${s.label}</span></div>
       `).join('');
 
-      document.getElementById('desc-impact').innerText = item.descImpact;
       document.getElementById('desc-white').innerText = item.descWhite;
+
+      // For projects (not profile), load impact HTML content directly
+      if (item.type !== 'profile') {
+        // Hide text description first, then load HTML
+        document.getElementById('desc-impact').style.display = 'none';
+        document.getElementById('impact-action-area').style.display = 'none';
+        loadImpactContent(item.links.impact);
+      } else {
+        // For profile, show text description
+        document.getElementById('desc-impact').innerText = item.descImpact;
+        document.getElementById('desc-impact').style.display = 'block';
+        document.getElementById('impact-content-container').style.display = 'none';
+        document.getElementById('impact-action-area').style.display = 'block';
+      }
 
       if (item.type === 'profile') {
         document.getElementById('btn-impact').innerText = item.btnLabels.impact;
@@ -693,6 +719,55 @@
 
       document.body.classList.add('expanded');
       switchHeroTab('impact');
+    }
+
+    // Function to load impact HTML content
+    async function loadImpactContent(url) {
+      const container = document.getElementById('impact-content-container');
+      const descImpact = document.getElementById('desc-impact');
+      const actionArea = document.getElementById('impact-action-area');
+
+      // Show loading indicator
+      container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Loading impact page...</div>';
+      container.style.display = 'block';
+
+      try {
+        console.log('Fetching impact content from:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const html = await response.text();
+        console.log('Successfully fetched impact content, length:', html.length);
+
+        // Create a temporary div to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Extract just the body content (avoid duplicating head elements)
+        const bodyContent = tempDiv.querySelector('body');
+        if (bodyContent) {
+          container.innerHTML = bodyContent.innerHTML;
+          console.log('Injected body content into container');
+        } else {
+          container.innerHTML = html;
+          console.log('Injected full HTML into container');
+        }
+
+        // Container is already visible from loading state
+        descImpact.style.display = 'none';
+        actionArea.style.display = 'none';
+
+      } catch (error) {
+        console.error('Failed to load impact content:', error);
+        // On error, fall back to showing text description
+        descImpact.style.display = 'block';
+        actionArea.style.display = 'block';
+        container.style.display = 'none';
+        container.innerHTML = '';
+      }
     }
 
     function closeHero() {
@@ -971,7 +1046,7 @@
       orb.add(coreParticles);
 
       // ===== FIREFLY FIELD (from first script, with mouse influence + flow field) =====
-      const flyCount = 92000;
+      const flyCount = 12000;
       const flyGeo = new THREE.BufferGeometry();
       const flyPos = new Float32Array(flyCount * 3);
       const flyVel = new Float32Array(flyCount * 3);
