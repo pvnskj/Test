@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -530,9 +529,7 @@
 
         <div class="tab-pane active" id="pane-impact">
           <div class="pane-desc" id="desc-impact"></div>
-          <iframe id="impact-iframe"
-            style="display: none; width: 100%; height: 100%; border: none; background: white; border-radius: 8px;"></iframe>
-          <div class="action-area" id="impact-action-area">
+          <div class="action-area">
             <button class="primary-btn" id="btn-impact" onclick="openDocCurrent('impact')">View Impact
               Deck</button>
           </div>
@@ -659,7 +656,7 @@
           <img src="${p.icon}" class="node-icon-img" alt="">
           <div class="node-title">${p.label}</div>
         `;
-        el.onclick = () => openImpactDirect(p.id);
+        el.onclick = () => expandProject(p.id);
         nodesContainer.appendChild(el);
       });
     }
@@ -667,17 +664,6 @@
     // --- 3. EXPANSION LOGIC ---
     let currentId = null;
 
-    // Direct impact view when clicking project icons
-    function openImpactDirect(id) {
-      const item = data.projects.find(x => x.id === id);
-      if (item && item.links && item.links.impact) {
-        document.getElementById('doc-frame').src = item.links.impact;
-        document.getElementById('doc-viewer').classList.add('open');
-        currentId = id; // Store for potential whitepaper access
-      }
-    }
-
-    // Expanded view for profile or whitepaper access
     function expandProject(id) {
       currentId = id;
       const item = id === 'profile' ? data.profile : data.projects.find(x => x.id === id);
@@ -694,21 +680,7 @@
         <div class="stat-row"><span class="s-val">${s.val}</span><span class="s-lbl">${s.label}</span></div>
       `).join('');
 
-      // Check if this is the Asset Catalog project - embed impact page directly
-      if (id === 'asset') {
-        // Hide text description and button, show iframe with impact page
-        document.getElementById('desc-impact').style.display = 'none';
-        document.getElementById('impact-action-area').style.display = 'none';
-        document.getElementById('impact-iframe').style.display = 'block';
-        document.getElementById('impact-iframe').src = item.links.impact;
-      } else {
-        // Show text description and button, hide iframe
-        document.getElementById('desc-impact').style.display = 'block';
-        document.getElementById('impact-action-area').style.display = 'block';
-        document.getElementById('impact-iframe').style.display = 'none';
-        document.getElementById('desc-impact').innerText = item.descImpact;
-      }
-
+      document.getElementById('desc-impact').innerText = item.descImpact;
       document.getElementById('desc-white').innerText = item.descWhite;
 
       if (item.type === 'profile') {
@@ -999,7 +971,7 @@
       orb.add(coreParticles);
 
       // ===== FIREFLY FIELD (from first script, with mouse influence + flow field) =====
-      const flyCount = 12000;
+      const flyCount = 92000;
       const flyGeo = new THREE.BufferGeometry();
       const flyPos = new Float32Array(flyCount * 3);
       const flyVel = new Float32Array(flyCount * 3);
