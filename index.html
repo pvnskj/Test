@@ -367,6 +367,11 @@
       flex-direction: column;
       opacity: 0;
       animation: fadeIn 0.5s forwards;
+      overflow: hidden;
+    }
+
+    .tab-pane.impact-iframe-mode {
+      padding: 20px;
     }
 
     .tab-pane.active {
@@ -529,7 +534,12 @@
 
         <div class="tab-pane active" id="pane-impact">
           <div class="pane-desc" id="desc-impact"></div>
-          <div class="action-area">
+          <div id="impact-iframe-wrapper"
+            style="display: none; width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 8px; background: white;">
+            <iframe id="impact-iframe"
+              style="width: 1000px; height: 1200px; border: none; transform-origin: top left; position: absolute; top: 0; left: 0;"></iframe>
+          </div>
+          <div class="action-area" id="impact-action-area">
             <button class="primary-btn" id="btn-impact" onclick="openDocCurrent('impact')">View Impact
               Deck</button>
           </div>
@@ -656,7 +666,7 @@
           <img src="${p.icon}" class="node-icon-img" alt="">
           <div class="node-title">${p.label}</div>
         `;
-        el.onclick = () => expandProject(p.id);
+        el.onclick = () => openImpactDirect(p.id);
         nodesContainer.appendChild(el);
       });
     }
@@ -664,6 +674,17 @@
     // --- 3. EXPANSION LOGIC ---
     let currentId = null;
 
+    // Direct impact view when clicking project icons
+    function openImpactDirect(id) {
+      const item = data.projects.find(x => x.id === id);
+      if (item && item.links && item.links.impact) {
+        document.getElementById('doc-frame').src = item.links.impact;
+        document.getElementById('doc-viewer').classList.add('open');
+        currentId = id; // Store for potential whitepaper access
+      }
+    }
+
+    // Expanded view for profile or whitepaper access
     function expandProject(id) {
       currentId = id;
       const item = id === 'profile' ? data.profile : data.projects.find(x => x.id === id);
@@ -680,7 +701,35 @@
         <div class="stat-row"><span class="s-val">${s.val}</span><span class="s-lbl">${s.label}</span></div>
       `).join('');
 
-      document.getElementById('desc-impact').innerText = item.descImpact;
+      // For all projects (except profile), embed impact page directly with frame-fit
+      if (item.type !== 'profile') {
+        // Hide text description and button, show iframe with impact page
+        document.getElementById('desc-impact').style.display = 'none';
+        document.getElementById('impact-action-area').style.display = 'none';
+
+        const wrapper = document.getElementById('impact-iframe-wrapper');
+        const iframe = document.getElementById('impact-iframe');
+        wrapper.style.display = 'block';
+        iframe.src = item.links.impact;
+        document.getElementById('pane-impact').classList.add('impact-iframe-mode');
+
+        // Calculate scale to fit the iframe content in the available space
+        setTimeout(() => {
+          const wrapperRect = wrapper.getBoundingClientRect();
+          const scaleX = wrapperRect.width / 1000;  // 1000px is iframe width
+          const scaleY = wrapperRect.height / 1200; // 1200px is iframe height
+          const scale = Math.min(scaleX, scaleY);
+          iframe.style.transform = `scale(${scale})`;
+        }, 100);
+      } else {
+        // For profile: show text description and button, hide iframe
+        document.getElementById('desc-impact').style.display = 'block';
+        document.getElementById('impact-action-area').style.display = 'block';
+        document.getElementById('impact-iframe-wrapper').style.display = 'none';
+        document.getElementById('desc-impact').innerText = item.descImpact;
+        document.getElementById('pane-impact').classList.remove('impact-iframe-mode');
+      }
+
       document.getElementById('desc-white').innerText = item.descWhite;
 
       if (item.type === 'profile') {
@@ -971,7 +1020,7 @@
       orb.add(coreParticles);
 
       // ===== FIREFLY FIELD (from first script, with mouse influence + flow field) =====
-      const flyCount = 92000;
+      const flyCount = 12000;
       const flyGeo = new THREE.BufferGeometry();
       const flyPos = new Float32Array(flyCount * 3);
       const flyVel = new Float32Array(flyCount * 3);
